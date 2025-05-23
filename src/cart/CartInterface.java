@@ -1,10 +1,12 @@
 package cart;
 
 import java.util.ArrayList;
+import java.util.List;
+
 import bookitem.Book;
 
 public interface CartInterface {
-	void printBookList(ArrayList<Book> p);
+	void printBookList(List<Book> booklist);
 
 	boolean isCartInBook(String id);
 

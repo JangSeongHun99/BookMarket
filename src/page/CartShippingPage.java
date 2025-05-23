@@ -3,7 +3,8 @@ package page;
 import javax.swing.*;
 import java.awt.*;
 import cart.Cart;
-import member.UserInIt;
+import member.AuthService;
+
 import java.awt.event.ActionEvent;
 
 public class CartShippingPage extends JPanel {
@@ -92,7 +93,7 @@ public class CartShippingPage extends JPanel {
 		if (select) {
 			nameLabel2.setBackground(Color.LIGHT_GRAY);
 			// nameLabel2.setText("입력된 고객 이름");
-			nameLabel2.setText(UserInIt.getmUser().getName());
+			nameLabel2.setText(AuthService.getCurrentUser().getName());
 		}
 		namePanel.add(nameLabel2);
 		shippingPanel.add(namePanel);
@@ -108,7 +109,7 @@ public class CartShippingPage extends JPanel {
 		if (select) {
 			phoneLabel2.setBackground(Color.LIGHT_GRAY);
 			// phoneLabel2.setText("입력된 고객 연락처");
-			phoneLabel2.setText(String.valueOf(UserInIt.getmUser().getPhone()));
+			phoneLabel2.setText(String.valueOf(AuthService.getCurrentUser().getPhone()));
 		}
 		phonePanel.add(phoneLabel2);
 		shippingPanel.add(phonePanel);

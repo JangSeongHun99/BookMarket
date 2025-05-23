@@ -1,82 +1,43 @@
 package bookitem;
 
-import java.io.*;
-import java.util.ArrayList;
+import java.util.ArrayList; // List로 변경하는 것이 좋음
+import java.util.List;
 
-public class BookInIt {
-	private static ArrayList<Book> mBookList;
+public class BookInIt { // 클래스명을 BookService 등으로 변경 고려
+	private static List<Book> mBookList; // ArrayList -> List
 	private static int mTotalBook = 0;
+	private static BookDAO bookDAO = new BookDAO(); // BookDAO 인스턴스 생성
 
 	public static void init() {
-		mTotalBook = totalFileToBookList();
-		mBookList = new ArrayList<Book>();
-		setFileToBookList(mBookList);
+		// DB에서 책 목록을 가져오도록 변경
+		mBookList = bookDAO.getAllBooks();
+		mTotalBook = mBookList.size();
 	}
 
-	public static int totalFileToBookList() {
-		try {
-			FileReader fr = new FileReader("src/book.txt");
+	// totalFileToBookList() 와 setFileToBookList() 메소드는 더 이상 필요 없음 (파일 기반이 아니므로)
+	// 필요하다면 삭제하거나 주석 처리
 
-			BufferedReader reader = new BufferedReader(fr);
-
-			String str;
-			int num = 0;
-			while ((str = reader.readLine()) != null) {
-				if (str.contains("ISBN"))
-					++num;
-			}
-			reader.close();
-			fr.close();
-			return num;
-		} catch (Exception e) {
-			System.out.println(e);
+	public static List<Book> getmBookList() { // 반환 타입 List로 변경
+		if (mBookList == null) { // 최초 호출 시 DB에서 로드
+			init();
 		}
-		return 0;
-	}
-
-	public static void setFileToBookList(ArrayList<Book> booklist) {
-		try {
-			FileReader fr = new FileReader("src/book.txt");
-			BufferedReader reader = new BufferedReader(fr);
-
-			String str2;
-			String[] readBook = new String[7];
-
-			while ((str2 = reader.readLine()) != null) {
-				if (str2.contains("ISBN")) {
-					readBook[0] = str2;
-					readBook[1] = reader.readLine();
-					readBook[2] = reader.readLine();
-					readBook[3] = reader.readLine();
-					readBook[4] = reader.readLine();
-					readBook[5] = reader.readLine();
-					readBook[6] = reader.readLine();
-				}
-
-				Book bookitem = new Book(readBook[0], readBook[1], Integer.parseInt(readBook[2]), readBook[3],
-						readBook[4], readBook[5], readBook[6]);
-				booklist.add(bookitem);
-			}
-			reader.close();
-			fr.close();
-		} catch (Exception e) {
-			System.out.println(e);
-		}
-	}
-
-	public static ArrayList<Book> getmBookList() {
 		return mBookList;
 	}
 
-	public static void setmBookList(ArrayList<Book> mBookList) {
-		BookInIt.mBookList = mBookList;
-	}
 
-	public static int getmTotalBook() {
-		return mTotalBook;
-	}
 
-	public static void setmTotalBook(int mTotalBook) {
-		BookInIt.mTotalBook = mTotalBook;
+
+	// 새로운 책을 DB와 mBookList 모두에 추가하는 메소드 (관리자 페이지에서 사용)
+	public static boolean addBook(Book newBook) {
+		if (bookDAO.addBook(newBook)) {
+			if (mBookList != null) { // 이미 리스트가 로드된 경우
+				mBookList.add(newBook);
+				mTotalBook = mBookList.size();
+			} else { // 아직 리스트가 로드되지 않은 경우, 다음 init() 호출 시 반영됨
+				init(); // 또는 mBookList를 여기서 다시 로드
+			}
+			return true;
+		}
+		return false;
 	}
 }

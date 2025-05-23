@@ -1,13 +1,12 @@
 package page;
 
-import member.Admin;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import member.AuthService;
 
 import javax.swing.*;
 
@@ -17,7 +16,7 @@ public class AdminLoginDialog extends JDialog {
 	public boolean isLogin = false;
 
 	public AdminLoginDialog(JFrame frame, String str) {
-		super(frame, "관리자로그인", true);
+		super(frame, "관리자 로그인", true);
 
 		Font ft;
 		ft = new Font("맑은 고딕", Font.BOLD, 15);
@@ -71,15 +70,26 @@ public class AdminLoginDialog extends JDialog {
 
 		okButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				String adminIdInput = idField.getText();
+				String adminPasswordInput = pwField.getText(); // JTextField에서 가져오도록 수정 (만약 JPasswordField라면 new String(pwField.getPassword()))
 
-				Admin admin = new Admin("", -1);
-				System.out.println(pwField.getText() + idField.getText());
-				System.out.println(admin.getId() + admin.getPassword());
-				if (admin.getId().equals(idField.getText()) && admin.getPassword().equals(pwField.getText())) {
+				// Admin admin = new Admin("", -1); // 더 이상 사용 안 함
+
+				if (AuthService.loginAdmin(adminIdInput, adminPasswordInput)) {
 					isLogin = true;
 					dispose();
-				} else
-					JOptionPane.showMessageDialog(okButton, "관리자 정보가 일치하지 않습니다");
+				} else {
+					JOptionPane.showMessageDialog(okButton, "관리자 정보가 일치하지 않거나 권한이 없습니다.");
+				}
+                /* // 기존 하드코딩된 로직 삭제
+                System.out.println(pwField.getText() + idField.getText());
+                System.out.println(admin.getId() + admin.getPassword());
+                if (admin.getId().equals(idField.getText()) && admin.getPassword().equals(pwField.getText())) {
+                    isLogin = true;
+                    dispose();
+                } else
+                    JOptionPane.showMessageDialog(okButton, "관리자 정보가 일치하지 않습니다");
+                */
 			}
 		});
 

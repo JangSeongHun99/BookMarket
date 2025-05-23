@@ -1,6 +1,8 @@
 package main;
 
 import bookitem.BookInIt;
+import member.AuthService; // AuthService import
+import member.User; // User import
 import cart.Cart;
 import page.*;
 
@@ -12,10 +14,24 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 public class MainWindow extends JFrame {
-	static Cart mCart;
+	private Cart mCart;
 	static JPanel mMenuPanel, mPagePanel;
 
 	public MainWindow(String title, int x, int y, int width, int height) {
+		User currentUser = AuthService.getCurrentUser();
+		if (currentUser == null) {
+			// 로그인되지 않은 사용자는 MainWindow를 사용할 수 없음
+			JOptionPane.showMessageDialog(null, "로그인이 필요합니다. 프로그램을 다시 시작하여 로그인해주세요.", "오류", JOptionPane.ERROR_MESSAGE);
+			// GuestWindow를 다시 띄우거나 프로그램 종료
+			// dispose(); // 현재 MainWindow 닫기
+			// System.exit(0); // 프로그램 종료
+			// return;
+			// 일단은 비로그인 상태로도 볼 수 있게 하되, 장바구니 등은 막히도록
+			this.mCart = new Cart(null); // 비로그인 사용자를 위한 임시 빈 장바구니
+		} else {
+			this.mCart = new Cart(currentUser); // 로그인된 사용자의 Cart 객체 생성 및 DB 로드
+		}
+
 
 		initContainer(title, x, y, width, height);
 		initMenu();
@@ -53,7 +69,6 @@ public class MainWindow extends JFrame {
 	}
 
 	private void menuIntroduction() {
-		mCart = new Cart();
 		Font ft;
 		ft = new Font("맑은 고딕", Font.BOLD, 15);
 
@@ -79,15 +94,18 @@ public class MainWindow extends JFrame {
 
 		bt2.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				if (mCart.mCartCount == 0)
+				if (!AuthService.isLoggedIn()) {
+					JOptionPane.showMessageDialog(bt2, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				if (mCart.getmCartCount() == 0) // mCart.mCartCount -> mCart.getmCartCount()
 					JOptionPane.showMessageDialog(bt2, "장바구니에 항목이 없습니다", "장바구니 상품 목록 보기", JOptionPane.ERROR_MESSAGE);
 				else {
 					mPagePanel.removeAll();
+					// CartItemListPage 생성자에 현재 사용자의 mCart 전달
 					mPagePanel.add("장바구니 상품 목록 보기", new CartItemListPage(mPagePanel, mCart));
 					mPagePanel.revalidate();
 					mPagePanel.repaint();
-
 				}
 			}
 		});
@@ -97,15 +115,20 @@ public class MainWindow extends JFrame {
 		bt3.setFont(ft);
 		mMenuPanel.add(bt3);
 
+		// bt3 (장바구니 비우기)
 		bt3.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				if (mCart.mCartCount == 0)
+				if (!AuthService.isLoggedIn()) {
+					JOptionPane.showMessageDialog(bt3, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				if (mCart.getmCartCount() == 0)
 					JOptionPane.showMessageDialog(bt3, "장바구니에 항목이 없습니다", "장바구니 비우기", JOptionPane.ERROR_MESSAGE);
 				else {
 					mPagePanel.removeAll();
-					menuCartClear(bt3);
-					mPagePanel.add("장바구니 비우기", new CartItemListPage(mPagePanel, mCart));
+					menuCartClear(bt3); // 내부적으로 mCart.deleteBook() 호출 (DB 연동됨)
+					// CartItemListPage를 다시 로드하여 빈 장바구니를 보여줌
+					mPagePanel.add("장바구니 비우기 후 목록", new CartItemListPage(mPagePanel, mCart));
 					mPagePanel.revalidate();
 					mPagePanel.repaint();
 				}
@@ -115,63 +138,89 @@ public class MainWindow extends JFrame {
 		JButton bt4 = new JButton("장바구니에 항목추가하기", new ImageIcon("./images/4.png"));
 		bt4.setFont(ft);
 		mMenuPanel.add(bt4);
+		// bt4 (장바구니에 항목 추가하기)
 		bt4.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
+				if (!AuthService.isLoggedIn()) {
+					JOptionPane.showMessageDialog(bt4, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
 				mPagePanel.removeAll();
-				BookInIt.init();
+				BookInIt.init(); // 책 목록 DB에서 다시 로드 (필요시)
+				// CartAddItemPage 생성자에 현재 사용자의 mCart 전달
 				mPagePanel.add("장바구니에 항목 추가하기", new CartAddItemPage(mPagePanel, mCart));
 				mPagePanel.revalidate();
 				mPagePanel.repaint();
 			}
 		});
 
-		JButton bt5 = new JButton("장바구니에 항목수량 줄이기", new ImageIcon("./images/5.png"));
-		bt5.setFont(ft);
-		mMenuPanel.add(bt5);
+//		JButton bt5 = new JButton("장바구니에 항목수량 줄이기", new ImageIcon("./images/5.png"));
+//		bt5.setFont(ft);
+//		mMenuPanel.add(bt5);
+//
+//		// bt5 (장바구니 항목 수량 줄이기) - 이 버튼의 기능 구현 필요
+//		// 예: 선택된 항목의 수량을 1 줄이거나, 수량 변경 다이얼로그 표시
+//		// mCart.updateQuantity(bookId, newQuantity) 사용
+//		bt5.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent e) {
+//				if (!AuthService.isLoggedIn()) {
+//					JOptionPane.showMessageDialog(bt5, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+//					return;
+//				}
+//				// 현재 선택된 장바구니 항목 가져오기 (CartItemListPage와 연동 필요)
+//				// 또는 별도의 UI로 수량 변경 기능 구현
+//				JOptionPane.showMessageDialog(bt5, "이 기능은 CartItemListPage에서 구현하거나 별도 UI가 필요합니다.");
+//				// 임시로 CartItemListPage를 다시 로드하여 사용자가 직접 수량 변경 UI를 보도록 유도할 수 있음
+//				mPagePanel.removeAll();
+//				mPagePanel.add("장바구니 상품 목록 보기 (수량변경)", new CartItemListPage(mPagePanel, mCart));
+//				mPagePanel.revalidate();
+//				mPagePanel.repaint();
+//			}
+//		});
 
-		JButton bt6 = new JButton("장바구니에 항목삭제하기", new ImageIcon("./images/6.png"));
-		bt6.setFont(ft);
-		mMenuPanel.add(bt6);
+//		JButton bt6 = new JButton("장바구니에 항목삭제하기", new ImageIcon("./images/6.png"));
+//		bt6.setFont(ft);
+//		mMenuPanel.add(bt6);
 
-		bt6.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
+		// bt6 (장바구니 항목 삭제하기)
+//		bt6.addActionListener(new ActionListener() {
+//			public void actionPerformed(ActionEvent e) {
+//				if (!AuthService.isLoggedIn()) {
+//					JOptionPane.showMessageDialog(bt6, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+//					return;
+//				}
+//				if (mCart.getmCartCount() == 0)
+//					JOptionPane.showMessageDialog(bt6, "장바구니에 항목이 없습니다", "장바구니 항목 삭제", JOptionPane.ERROR_MESSAGE); // 오타 수정: bt3 -> bt6
+//				else {
+//					// CartItemListPage에서 선택된 항목의 인덱스나 bookId를 가져와야 함
+//					// 여기서는 CartItemListPage를 먼저 띄우고 거기서 삭제하도록 유도
+//					mPagePanel.removeAll();
+//					// CartItemListPage 생성자에 mCart 전달, 이 페이지 내에서 삭제 로직 처리
+//					mPagePanel.add("장바구니의 항목 삭제하기", new CartItemListPage(mPagePanel, mCart));
+//					// CartItemListPage의 mSelectRow는 static이므로 MainWindow에서 직접 접근하는 것은 좋지 않음.
+//					// CartItemListPage 내부에서 삭제 로직을 처리하도록 유도.
+//					mPagePanel.revalidate();
+//					mPagePanel.repaint();
+//				}
+//			}
+//		});
 
-				if (mCart.mCartCount == 0)
-					JOptionPane.showMessageDialog(bt3, "장바구니에 항목이 없습니다", "장바구니 비우기", JOptionPane.ERROR_MESSAGE);
-				else {
-
-					mPagePanel.removeAll();
-					CartItemListPage cartList = new CartItemListPage(mPagePanel, mCart);
-					if (mCart.mCartCount == 0)
-						JOptionPane.showMessageDialog(bt6, "장바구니에 항목이 없습니다");
-					else if (cartList.mSelectRow == -1)
-						JOptionPane.showMessageDialog(bt6, "장바구니에서 삭제할 항목을 선택하세요");
-					else {
-						mCart.removeCart(cartList.mSelectRow);
-// 장바구니에서 선택 항목 삭제하기		
-						cartList.mSelectRow = -1;
-					}
-				}
-				mPagePanel.add("장바구니의 항목 삭제하기", new CartItemListPage(mPagePanel, mCart));
-
-				mPagePanel.revalidate();
-				mPagePanel.repaint();
-			}
-		});
-
-		JButton bt7 = new JButton("주문하기", new ImageIcon("./images/7.png"));
+		JButton bt7 = new JButton("주문하기", new ImageIcon("./images/5.png"));
 		bt7.setFont(ft);
 		mMenuPanel.add(bt7);
 
+		// bt7 (주문하기)
 		bt7.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
-
-				if (mCart.mCartCount == 0)
+				if (!AuthService.isLoggedIn()) {
+					JOptionPane.showMessageDialog(bt7, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				if (mCart.getmCartCount() == 0)
 					JOptionPane.showMessageDialog(bt7, "장바구니에 항목이 없습니다", "주문처리", JOptionPane.ERROR_MESSAGE);
 				else {
-
 					mPagePanel.removeAll();
+					// CartShippingPage 생성자에 mCart 전달
 					mPagePanel.add("주문 배송지", new CartShippingPage(mPagePanel, mCart));
 					mPagePanel.revalidate();
 					mPagePanel.repaint();
@@ -179,7 +228,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 
-		JButton bt8 = new JButton("종료", new ImageIcon("./images/8.png"));
+		JButton bt8 = new JButton("종료", new ImageIcon("./images/6.png"));
 		bt8.setFont(ft);
 		mMenuPanel.add(bt8);
 
@@ -194,7 +243,7 @@ public class MainWindow extends JFrame {
 			}
 		});
 
-		JButton bt9 = new JButton("관리자", new ImageIcon("./images/9.png"));
+		JButton bt9 = new JButton("관리자", new ImageIcon("./images/7.png"));
 		bt9.setFont(ft);
 		mMenuPanel.add(bt9);
 
@@ -273,6 +322,21 @@ public class MainWindow extends JFrame {
 			}
 		});
 
+		item03.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!AuthService.isLoggedIn()) {
+					JOptionPane.showMessageDialog(MainWindow.this, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+					return;
+				}
+				mPagePanel.removeAll();
+				BookInIt.init();
+				mPagePanel.add("장바구니에 항목 추가하기", new CartAddItemPage(mPagePanel, mCart));
+				// add(mPagePanel); // 불필요
+				mPagePanel.revalidate();
+				mPagePanel.repaint(); // repaint 추가
+			}
+		});
+
 		item11.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				mPagePanel.removeAll();
@@ -286,14 +350,16 @@ public class MainWindow extends JFrame {
 
 	private void menuCartClear(JButton button) {
 
-		if (mCart.mCartCount == 0)
+		if (!AuthService.isLoggedIn()) {
+			JOptionPane.showMessageDialog(button, "로그인이 필요합니다.", "오류", JOptionPane.ERROR_MESSAGE);
+			return;
+		}
+		if (mCart.getmCartCount() == 0)
 			JOptionPane.showMessageDialog(button, "장바구니의 항목이 없습니다");
 		else {
-
 			int select = JOptionPane.showConfirmDialog(button, "장바구니의 모든 항목을 삭제하겠습니까? ");
-
 			if (select == 0) {
-				mCart.deleteBook();
+				mCart.deleteBook(); // 내부적으로 DB 연동됨
 				JOptionPane.showMessageDialog(button, "장바구니의 모든 항목을 삭제했습니다");
 			}
 		}

@@ -4,7 +4,7 @@ import javax.swing.*;
 
 import bookitem.BookInIt;
 import cart.Cart;
-import member.UserInIt;
+import member.AuthService;
 
 import java.awt.*;
 import java.text.SimpleDateFormat;
@@ -37,7 +37,7 @@ public class CartOrderBillPage extends JPanel {
 		panel.add(shippingPanel);
 		
 		// printBillInfo("입력된 고객 이름", "입력된 고객 연락처", "입력된 고객 배송지");
-		printBillInfo(UserInIt.getmUser().getName(), String.valueOf(UserInIt.getmUser().getPhone()), UserInIt.getmUser().getAddress());
+		printBillInfo(AuthService.getCurrentUser().getName(), String.valueOf(AuthService.getCurrentUser().getPhone()), AuthService.getCurrentUser().getAddress());
 	}
 
 	public void printBillInfo(String name, String phone, String address) {
@@ -132,9 +132,9 @@ public class CartOrderBillPage extends JPanel {
 
 		int sum = 0;
 
-		for (int i = 0; i < mCart.mCartCount; i++)
+		for (int i = 0; i < mCart.getmCartCount(); i++)
 			sum += mCart.mCartItem.get(i).getTotalPrice();
-		System.out.println("------------" + mCart.mCartCount);
+		System.out.println("------------" + mCart.getmCartCount());
 
 		JPanel panel07 = new JPanel();
 		panel07.setBounds(0, 40 + (mCart.mCartItem.size() * 5), 500, 5);
@@ -148,7 +148,7 @@ public class CartOrderBillPage extends JPanel {
 
 	public static void main(String[] args) {
 
-		Cart mCart = new Cart();
+		//Cart mCart = new Cart();
 		JFrame frame = new JFrame();
 		frame.setBounds(0, 0, 1000, 750);
 		frame.setLayout(null);
@@ -158,7 +158,7 @@ public class CartOrderBillPage extends JPanel {
 
 		frame.add(mPagePanel);
 		BookInIt.init();
-		mPagePanel.add("주문하기", new CartOrderBillPage(mPagePanel, mCart));
+		//mPagePanel.add("주문하기", new CartOrderBillPage(mPagePanel, mCart));
 		frame.setVisible(true);
 
 	}
